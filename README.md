@@ -1,1 +1,1 @@
-Assignment: WebSocket — Live Quiz Game
+Assignment: knowledge hub API
