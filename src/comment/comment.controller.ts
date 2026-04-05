@@ -20,7 +20,9 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import { Comment } from '../common/models/comment.model';
+import { PaginatedResponse } from '../common/models/paginated-response.model';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { CommentListQueryDto } from './dto/comment-list-query.dto';
 import { CommentService } from './comment.service';
 
 @ApiTags('comment')
@@ -32,10 +34,8 @@ export class CommentController {
   @ApiOperation({ summary: 'Get comments by articleId.' })
   @ApiOkResponse({ description: 'Comments returned.' })
   @ApiBadRequestResponse({ description: 'Invalid or missing articleId.' })
-  findAllByArticle(
-    @Query('articleId', new ParseUUIDPipe({ version: '4' })) articleId: string,
-  ): Comment[] {
-    return this.commentService.findByArticleId(articleId);
+  findAllByArticle(@Query() query: CommentListQueryDto): Comment[] | PaginatedResponse<Comment> {
+    return this.commentService.findByArticleId(query);
   }
 
   @Post()

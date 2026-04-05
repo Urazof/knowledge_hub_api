@@ -5,8 +5,11 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Comment } from '../common/models/comment.model';
+import { PaginatedResponse } from '../common/models/paginated-response.model';
+import { paginateItems, shouldPaginate, sortItems } from '../common/utils/list-query.util';
 import { InMemoryDbService } from '../storage/in-memory-db.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { CommentListQueryDto } from './dto/comment-list-query.dto';
 
 @Injectable()
 export class CommentService {
@@ -16,8 +19,21 @@ export class CommentService {
     return this.db.comments;
   }
 
-  findByArticleId(articleId: string): Comment[] {
-    return this.db.comments.filter((comment) => comment.articleId === articleId);
+  findByArticleId(query: CommentListQueryDto): Comment[] | PaginatedResponse<Comment> {
+    const filtered = this.db.comments.filter((comment) => comment.articleId === query.articleId);
+    const sorted = sortItems(filtered, query.sortBy, query.order ?? 'asc', [
+      'id',
+      'content',
+      'articleId',
+      'authorId',
+      'createdAt',
+    ]);
+
+    if (shouldPaginate(query)) {
+      return paginateItems(sorted, query.page ?? 1, query.limit ?? 10);
+    }
+
+    return sorted;
   }
 
   create(payload: CreateCommentDto): Comment {

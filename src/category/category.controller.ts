@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   Put,
 } from '@nestjs/common';
 import {
@@ -19,6 +20,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Category } from '../common/models/category.model';
+import { ListQueryDto } from '../common/dto/list-query.dto';
+import { PaginatedResponse } from '../common/models/paginated-response.model';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { CategoryService } from './category.service';
@@ -31,8 +34,8 @@ export class CategoryController {
   @Get()
   @ApiOperation({ summary: 'Get all categories.' })
   @ApiOkResponse({ description: 'Categories returned.' })
-  findAll(): Category[] {
-    return this.categoryService.findAll();
+  findAll(@Query() query: ListQueryDto): Category[] | PaginatedResponse<Category> {
+    return this.categoryService.findAll(query);
   }
 
   @Get(':id')

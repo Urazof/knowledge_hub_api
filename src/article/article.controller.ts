@@ -20,6 +20,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Article } from '../common/models/article.model';
+import { PaginatedResponse } from '../common/models/paginated-response.model';
 import { ArticleFilterQueryDto } from './dto/article-filter-query.dto';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
@@ -34,7 +35,7 @@ export class ArticleController {
   @ApiOperation({ summary: 'Get all articles with optional filtering.' })
   @ApiOkResponse({ description: 'Articles list returned.' })
   @ApiBadRequestResponse({ description: 'Invalid query filter values.' })
-  findAll(@Query() query: ArticleFilterQueryDto): Article[] {
+  findAll(@Query() query: ArticleFilterQueryDto): Article[] | PaginatedResponse<Article> {
     return this.articleService.findAll(query);
   }
 

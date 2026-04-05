@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { UserRole } from '../common/enums/user-role.enum';
+import { ListQueryDto } from '../common/dto/list-query.dto';
+import { PaginatedResponse } from '../common/models/paginated-response.model';
 import { PublicUser, User } from '../common/models/user.model';
+import { paginateItems, shouldPaginate, sortItems } from '../common/utils/list-query.util';
 import { sanitizeUser } from '../common/utils/sanitize-user';
 import { InMemoryDbService } from '../storage/in-memory-db.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -15,8 +18,21 @@ import { UpdatePasswordDto } from './dto/update-password.dto';
 export class UserService {
   constructor(private readonly db: InMemoryDbService) {}
 
-  findAllPublic(): PublicUser[] {
-    return this.db.users.map(sanitizeUser);
+  findAllPublic(query: ListQueryDto = {}): PublicUser[] | PaginatedResponse<PublicUser> {
+    const users = this.db.users.map(sanitizeUser);
+    const sorted = sortItems(users, query.sortBy, query.order ?? 'asc', [
+      'id',
+      'login',
+      'role',
+      'createdAt',
+      'updatedAt',
+    ]);
+
+    if (shouldPaginate(query)) {
+      return paginateItems(sorted, query.page ?? 1, query.limit ?? 10);
+    }
+
+    return sorted;
   }
 
   findOnePublic(id: string): PublicUser {

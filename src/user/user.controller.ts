@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   Put,
 } from '@nestjs/common';
 import {
@@ -20,6 +21,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { PublicUser } from '../common/models/user.model';
+import { ListQueryDto } from '../common/dto/list-query.dto';
+import { PaginatedResponse } from '../common/models/paginated-response.model';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { UserService } from './user.service';
@@ -32,8 +35,8 @@ export class UserController {
   @Get()
   @ApiOperation({ summary: 'Get all users.' })
   @ApiOkResponse({ description: 'Users returned.' })
-  findAll(): PublicUser[] {
-    return this.userService.findAllPublic();
+  findAll(@Query() query: ListQueryDto): PublicUser[] | PaginatedResponse<PublicUser> {
+    return this.userService.findAllPublic(query);
   }
 
   @Get(':id')

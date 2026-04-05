@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { ListQueryDto } from '../common/dto/list-query.dto';
 import { Category } from '../common/models/category.model';
+import { PaginatedResponse } from '../common/models/paginated-response.model';
+import { paginateItems, shouldPaginate, sortItems } from '../common/utils/list-query.util';
 import { InMemoryDbService } from '../storage/in-memory-db.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -9,8 +12,18 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 export class CategoryService {
   constructor(private readonly db: InMemoryDbService) {}
 
-  findAll(): Category[] {
-    return this.db.categories;
+  findAll(query: ListQueryDto = {}): Category[] | PaginatedResponse<Category> {
+    const sorted = sortItems(this.db.categories, query.sortBy, query.order ?? 'asc', [
+      'id',
+      'name',
+      'description',
+    ]);
+
+    if (shouldPaginate(query)) {
+      return paginateItems(sorted, query.page ?? 1, query.limit ?? 10);
+    }
+
+    return sorted;
   }
 
   findOne(id: string): Category {

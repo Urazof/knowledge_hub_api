@@ -1,8 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { ListQueryDto } from '../../common/dto/list-query.dto';
 import { ArticleStatus } from '../../common/enums/article-status.enum';
 
-export class ArticleFilterQueryDto {
+export class ArticleFilterQueryDto extends ListQueryDto {
   @ApiPropertyOptional({ enum: ArticleStatus, description: 'Filter by article status.' })
   @IsOptional()
   @IsEnum(ArticleStatus)

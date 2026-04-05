@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { ArticleStatus } from '../common/enums/article-status.enum';
 import { Article } from '../common/models/article.model';
+import { PaginatedResponse } from '../common/models/paginated-response.model';
+import { paginateItems, shouldPaginate, sortItems } from '../common/utils/list-query.util';
 import { InMemoryDbService } from '../storage/in-memory-db.service';
 import { ArticleFilterQueryDto } from './dto/article-filter-query.dto';
 import { CreateArticleDto } from './dto/create-article.dto';
@@ -11,12 +13,8 @@ import { UpdateArticleDto } from './dto/update-article.dto';
 export class ArticleService {
   constructor(private readonly db: InMemoryDbService) {}
 
-  findAll(filters?: ArticleFilterQueryDto): Article[] {
-    if (!filters || (!filters.status && !filters.categoryId && !filters.tag)) {
-      return this.db.articles;
-    }
-
-    return this.db.articles.filter((article) => {
+  findAll(filters: ArticleFilterQueryDto = {}): Article[] | PaginatedResponse<Article> {
+    const filtered = this.db.articles.filter((article) => {
       if (filters.status && article.status !== filters.status) {
         return false;
       }
@@ -31,6 +29,23 @@ export class ArticleService {
 
       return true;
     });
+
+    const sorted = sortItems(filtered, filters.sortBy, filters.order ?? 'asc', [
+      'id',
+      'title',
+      'content',
+      'status',
+      'authorId',
+      'categoryId',
+      'createdAt',
+      'updatedAt',
+    ]);
+
+    if (shouldPaginate(filters)) {
+      return paginateItems(sorted, filters.page ?? 1, filters.limit ?? 10);
+    }
+
+    return sorted;
   }
 
   findOne(id: string): Article {
