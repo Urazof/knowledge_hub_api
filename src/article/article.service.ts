@@ -1,26 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { ArticleStatus } from '../common/enums/article-status.enum';
 import { Article } from '../common/models/article.model';
 import { InMemoryDbService } from '../storage/in-memory-db.service';
-
-interface CreateArticlePayload {
-  title?: unknown;
-  content?: unknown;
-  status?: unknown;
-  authorId?: unknown;
-  categoryId?: unknown;
-  tags?: unknown;
-}
-
-interface UpdateArticlePayload {
-  title?: unknown;
-  content?: unknown;
-  status?: unknown;
-  authorId?: unknown;
-  categoryId?: unknown;
-  tags?: unknown;
-}
+import { CreateArticleDto } from './dto/create-article.dto';
+import { UpdateArticleDto } from './dto/update-article.dto';
 
 @Injectable()
 export class ArticleService {
@@ -34,24 +18,16 @@ export class ArticleService {
     return this.findOneOrThrow(id);
   }
 
-  create(payload: CreateArticlePayload): Article {
-    if (typeof payload.title !== 'string' || payload.title.length === 0) {
-      throw new BadRequestException('title is required');
-    }
-
-    if (typeof payload.content !== 'string' || payload.content.length === 0) {
-      throw new BadRequestException('content is required');
-    }
-
+  create(payload: CreateArticleDto): Article {
     const now = Date.now();
     const article: Article = {
       id: randomUUID(),
       title: payload.title,
       content: payload.content,
-      status: this.resolveStatus(payload.status),
-      authorId: this.resolveNullableString(payload.authorId),
-      categoryId: this.resolveNullableString(payload.categoryId),
-      tags: this.resolveTags(payload.tags),
+      status: payload.status ?? ArticleStatus.DRAFT,
+      authorId: payload.authorId ?? null,
+      categoryId: payload.categoryId ?? null,
+      tags: payload.tags ?? [],
       createdAt: now,
       updatedAt: now,
     };
@@ -60,37 +36,31 @@ export class ArticleService {
     return article;
   }
 
-  update(id: string, payload: UpdateArticlePayload): Article {
+  update(id: string, payload: UpdateArticleDto): Article {
     const article = this.findOneOrThrow(id);
 
     if (payload.title !== undefined) {
-      if (typeof payload.title !== 'string' || payload.title.length === 0) {
-        throw new BadRequestException('title is invalid');
-      }
       article.title = payload.title;
     }
 
     if (payload.content !== undefined) {
-      if (typeof payload.content !== 'string' || payload.content.length === 0) {
-        throw new BadRequestException('content is invalid');
-      }
       article.content = payload.content;
     }
 
     if (payload.status !== undefined) {
-      article.status = this.resolveStatus(payload.status);
+      article.status = payload.status;
     }
 
     if (payload.authorId !== undefined) {
-      article.authorId = this.resolveNullableString(payload.authorId);
+      article.authorId = payload.authorId;
     }
 
     if (payload.categoryId !== undefined) {
-      article.categoryId = this.resolveNullableString(payload.categoryId);
+      article.categoryId = payload.categoryId;
     }
 
     if (payload.tags !== undefined) {
-      article.tags = this.resolveTags(payload.tags);
+      article.tags = payload.tags;
     }
 
     article.updatedAt = Date.now();
@@ -106,45 +76,6 @@ export class ArticleService {
     this.db.comments.splice(0, this.db.comments.length, ...commentsToKeep);
   }
 
-  private resolveStatus(input: unknown): ArticleStatus {
-    if (input === undefined) {
-      return ArticleStatus.DRAFT;
-    }
-
-    if (
-      input === ArticleStatus.DRAFT ||
-      input === ArticleStatus.PUBLISHED ||
-      input === ArticleStatus.ARCHIVED
-    ) {
-      return input;
-    }
-
-    throw new BadRequestException('status is invalid');
-  }
-
-  private resolveNullableString(input: unknown): string | null {
-    if (input === undefined || input === null) {
-      return null;
-    }
-
-    if (typeof input === 'string') {
-      return input;
-    }
-
-    throw new BadRequestException('value is invalid');
-  }
-
-  private resolveTags(input: unknown): string[] {
-    if (input === undefined) {
-      return [];
-    }
-
-    if (!Array.isArray(input) || input.some((tag) => typeof tag !== 'string')) {
-      throw new BadRequestException('tags are invalid');
-    }
-
-    return input;
-  }
 
   private findOneOrThrow(id: string): Article {
     const article = this.db.articles.find((item) => item.id === id);

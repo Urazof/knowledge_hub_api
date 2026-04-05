@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
@@ -7,12 +6,7 @@ import {
 import { randomUUID } from 'crypto';
 import { Comment } from '../common/models/comment.model';
 import { InMemoryDbService } from '../storage/in-memory-db.service';
-
-interface CreateCommentPayload {
-  content?: unknown;
-  articleId?: unknown;
-  authorId?: unknown;
-}
+import { CreateCommentDto } from './dto/create-comment.dto';
 
 @Injectable()
 export class CommentService {
@@ -26,15 +20,7 @@ export class CommentService {
     return this.db.comments.filter((comment) => comment.articleId === articleId);
   }
 
-  create(payload: CreateCommentPayload): Comment {
-    if (typeof payload.content !== 'string' || payload.content.length === 0) {
-      throw new BadRequestException('content is required');
-    }
-
-    if (typeof payload.articleId !== 'string' || payload.articleId.length === 0) {
-      throw new BadRequestException('articleId is required');
-    }
-
+  create(payload: CreateCommentDto): Comment {
     const articleExists = this.db.articles.some((article) => article.id === payload.articleId);
     if (!articleExists) {
       throw new UnprocessableEntityException('articleId does not exist');
@@ -44,7 +30,7 @@ export class CommentService {
       id: randomUUID(),
       content: payload.content,
       articleId: payload.articleId,
-      authorId: this.resolveAuthorId(payload.authorId),
+      authorId: payload.authorId ?? null,
       createdAt: Date.now(),
     };
 
@@ -62,15 +48,4 @@ export class CommentService {
     this.db.comments.splice(index, 1);
   }
 
-  private resolveAuthorId(input: unknown): string | null {
-    if (input === undefined || input === null) {
-      return null;
-    }
-
-    if (typeof input !== 'string') {
-      throw new BadRequestException('authorId is invalid');
-    }
-
-    return input;
-  }
 }

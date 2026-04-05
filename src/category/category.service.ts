@@ -1,17 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Category } from '../common/models/category.model';
 import { InMemoryDbService } from '../storage/in-memory-db.service';
-
-interface CreateCategoryPayload {
-  name?: unknown;
-  description?: unknown;
-}
-
-interface UpdateCategoryPayload {
-  name?: unknown;
-  description?: unknown;
-}
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoryService {
@@ -25,15 +17,7 @@ export class CategoryService {
     return this.findOneOrThrow(id);
   }
 
-  create(payload: CreateCategoryPayload): Category {
-    if (typeof payload.name !== 'string' || payload.name.length === 0) {
-      throw new BadRequestException('name is required');
-    }
-
-    if (typeof payload.description !== 'string' || payload.description.length === 0) {
-      throw new BadRequestException('description is required');
-    }
-
+  create(payload: CreateCategoryDto): Category {
     const category: Category = {
       id: randomUUID(),
       name: payload.name,
@@ -44,20 +28,14 @@ export class CategoryService {
     return category;
   }
 
-  update(id: string, payload: UpdateCategoryPayload): Category {
+  update(id: string, payload: UpdateCategoryDto): Category {
     const category = this.findOneOrThrow(id);
 
     if (payload.name !== undefined) {
-      if (typeof payload.name !== 'string' || payload.name.length === 0) {
-        throw new BadRequestException('name is invalid');
-      }
       category.name = payload.name;
     }
 
     if (payload.description !== undefined) {
-      if (typeof payload.description !== 'string' || payload.description.length === 0) {
-        throw new BadRequestException('description is invalid');
-      }
       category.description = payload.description;
     }
 

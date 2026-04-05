@@ -10,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { Comment } from '../common/models/comment.model';
+import { CreateCommentDto } from './dto/create-comment.dto';
 import { CommentService } from './comment.service';
 
 @Controller('comment')
@@ -24,7 +25,7 @@ export class CommentController {
   }
 
   @Post()
-  create(@Body() body: Record<string, unknown>): Comment {
+  create(@Body() body: CreateCommentDto): Comment {
     return this.commentService.create(body);
   }
 

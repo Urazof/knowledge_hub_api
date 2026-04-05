@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -9,17 +8,8 @@ import { UserRole } from '../common/enums/user-role.enum';
 import { PublicUser, User } from '../common/models/user.model';
 import { sanitizeUser } from '../common/utils/sanitize-user';
 import { InMemoryDbService } from '../storage/in-memory-db.service';
-
-interface CreateUserPayload {
-  login?: unknown;
-  password?: unknown;
-  role?: unknown;
-}
-
-interface UpdatePasswordPayload {
-  oldPassword?: unknown;
-  newPassword?: unknown;
-}
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @Injectable()
 export class UserService {
@@ -33,16 +23,8 @@ export class UserService {
     return sanitizeUser(this.findOneOrThrow(id));
   }
 
-  create(payload: CreateUserPayload): PublicUser {
-    if (typeof payload.login !== 'string' || payload.login.length === 0) {
-      throw new BadRequestException('login is required');
-    }
-
-    if (typeof payload.password !== 'string' || payload.password.length === 0) {
-      throw new BadRequestException('password is required');
-    }
-
-    const role = this.resolveRole(payload.role);
+  create(payload: CreateUserDto): PublicUser {
+    const role = payload.role ?? UserRole.VIEWER;
     const now = Date.now();
 
     const user: User = {
@@ -58,15 +40,7 @@ export class UserService {
     return sanitizeUser(user);
   }
 
-  updatePassword(id: string, payload: UpdatePasswordPayload): PublicUser {
-    if (typeof payload.oldPassword !== 'string' || payload.oldPassword.length === 0) {
-      throw new BadRequestException('oldPassword is required');
-    }
-
-    if (typeof payload.newPassword !== 'string' || payload.newPassword.length === 0) {
-      throw new BadRequestException('newPassword is required');
-    }
-
+  updatePassword(id: string, payload: UpdatePasswordDto): PublicUser {
     const user = this.findOneOrThrow(id);
 
     if (user.password !== payload.oldPassword) {
@@ -94,17 +68,6 @@ export class UserService {
     this.db.comments.splice(0, this.db.comments.length, ...commentsToKeep);
   }
 
-  private resolveRole(input: unknown): UserRole {
-    if (input === undefined) {
-      return UserRole.VIEWER;
-    }
-
-    if (input === UserRole.ADMIN || input === UserRole.EDITOR || input === UserRole.VIEWER) {
-      return input;
-    }
-
-    throw new BadRequestException('role is invalid');
-  }
 
   private findOneOrThrow(id: string): User {
     const user = this.db.users.find((item) => item.id === id);

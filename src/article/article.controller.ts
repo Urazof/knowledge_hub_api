@@ -10,6 +10,8 @@ import {
   Put,
 } from '@nestjs/common';
 import { Article } from '../common/models/article.model';
+import { CreateArticleDto } from './dto/create-article.dto';
+import { UpdateArticleDto } from './dto/update-article.dto';
 import { ArticleService } from './article.service';
 
 @Controller('article')
@@ -27,14 +29,14 @@ export class ArticleController {
   }
 
   @Post()
-  create(@Body() body: Record<string, unknown>): Article {
+  create(@Body() body: CreateArticleDto): Article {
     return this.articleService.create(body);
   }
 
   @Put(':id')
   update(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: UpdateArticleDto,
   ): Article {
     return this.articleService.update(id, body);
   }
