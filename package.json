@@ -7,7 +7,10 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "ts-node src/main.ts",
     "start:prod": "node dist/main.js",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "test:extra": "ts-node tests/extra-automated-tests.ts",
+    "test:spec": "ts-node tests/extra-automated.spec.ts",
+    "test": "npm run test:extra; npm run test:spec"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",

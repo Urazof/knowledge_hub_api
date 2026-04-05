@@ -46,6 +46,9 @@ npm run build
 npm run lint
 npm start
 npm run start:prod
+npm run test:extra
+npm run test:spec
+npm run test
 ```
 
 ## API overview
