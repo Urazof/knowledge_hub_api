@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { ArticleStatus } from '../common/enums/article-status.enum';
 import { Article } from '../common/models/article.model';
 import { InMemoryDbService } from '../storage/in-memory-db.service';
+import { ArticleFilterQueryDto } from './dto/article-filter-query.dto';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 
@@ -10,8 +11,26 @@ import { UpdateArticleDto } from './dto/update-article.dto';
 export class ArticleService {
   constructor(private readonly db: InMemoryDbService) {}
 
-  findAll(): Article[] {
-    return this.db.articles;
+  findAll(filters?: ArticleFilterQueryDto): Article[] {
+    if (!filters || (!filters.status && !filters.categoryId && !filters.tag)) {
+      return this.db.articles;
+    }
+
+    return this.db.articles.filter((article) => {
+      if (filters.status && article.status !== filters.status) {
+        return false;
+      }
+
+      if (filters.categoryId && article.categoryId !== filters.categoryId) {
+        return false;
+      }
+
+      if (filters.tag && !article.tags.includes(filters.tag)) {
+        return false;
+      }
+
+      return true;
+    });
   }
 
   findOne(id: string): Article {
