@@ -1,322 +1,197 @@
-# Assignment: WebSocket — Live Quiz Game
+# Assignment: Nest.js Knowledge Hub API
 
 ## Description
 
-Your task is to implement a backend for a real-time **Live Quiz Game** using WebSocket. A host creates a quiz with questions, players join the game and answer questions in real time.
-
-**Fork this repository to get started:** [https://github.com/AlreadyBored/live-quiz-game-template](https://github.com/AlreadyBored/live-quiz-game-template)
-
-The repository contains a fully working React frontend (`client/`) and a server stub (`server/`) with TypeScript types and a basic WebSocket server setup. Your task is to implement the server logic.
+Your task is to create a REST API for a **Knowledge Hub** platform using the Nest.js framework. The Knowledge Hub allows users to create, edit, and organize articles by categories and tags.
 
 ## Technical requirements
 
-- Task can be implemented in JavaScript or TypeScript
+- Task should be implemented in TypeScript
+- Use Nest.js as the application framework
 - Use 24.x.x version (24.10.0 or upper) of Node.js
-- The program is started by npm script `start`:
-  ```bash
-  npm run start
-  ```
-- After starting, the program displays the WebSocket server address and port
-- All requests and responses must be sent as JSON strings
 
-## Game Flow
+NB! You must create a new repository from [template](https://github.com/rolling-scopes-school/nodejs-course-template/generate) for this task. Its name must match the current period of the course (for example, for Node.js 2026 Q1 it'll be `nodejs-2026q1-knowledge-hub`), i.e. full link to the repository must be `https://github.com/%your-github-id%/nodejs-2026q1-knowledge-hub`.
 
-1. Players and hosts **register** or **login** with a name and password
-2. A host **creates a game** by submitting a list of questions (each with 4 answer options, a correct answer index, and a time limit)
-3. The server generates a **6-character room code** for the game
-4. Players **join the game** using the room code
-5. The host **starts the game** — the first question is broadcast to all players
-6. Players **submit answers** within the time limit
-7. When the timer expires (or all players have answered), the server broadcasts the **correct answer** and **updated scores**
-8. The **next question** is sent, and the process repeats
-9. After the last question, the server broadcasts the **final scoreboard** with ranks
+**Create an application that operates with the following resources:**
 
-## Scoring Rules
-
-- Correct answer: `basePoints * (timeRemaining / timeLimit)` — faster answers earn more points (maximum 1000 points per question)
-- Wrong answer or no answer: 0 points
-- `basePoints` = 1000
-
-## Data Structures (in-memory)
-
-```typescript
-interface Player {
-  name: string;
-  index: number | string; // unique player id
-  score: number;
-}
-
-interface Question {
-  text: string;
-  options: string[];       // exactly 4 options
-  correctIndex: number;    // index of the correct option (0-3)
-  timeLimitSec: number;    // time limit for the question in seconds
-}
-
-interface Game {
-  id: string;
-  code: string;            // 6-character alphanumeric code
-  hostId: number | string;
-  questions: Question[];
-  players: Player[];
-  currentQuestion: number; // index of current question (-1 before start)
-  status: 'waiting' | 'in_progress' | 'finished';
-}
-```
-
-## WebSocket Commands
-
-### Note: `data` value should be a **JSON string**, `id` should always be `0`
-
-### Player Commands
-
-- **Register / Login**
-
-  `<-` (from client)
-  ```json
-  {
-    "type": "reg",
-    "data": {
-      "name": "<string>",
-      "password": "<string>"
-    },
-    "id": 0
-  }
-  ```
-  `->` (from server, personal response)
-  ```json
-  {
-    "type": "reg",
-    "data": {
-      "name": "<string>",
-      "index": "<number | string>",
-      "error": false,
-      "errorText": ""
-    },
-    "id": 0
+- `User` (with attributes):
+  ```typescript
+  interface User {
+    id: string; // uuid v4
+    login: string;
+    password: string;
+    role: 'admin' | 'editor' | 'viewer';
+    createdAt: number; // timestamp of creation
+    updatedAt: number; // timestamp of last update
   }
   ```
 
-### Game Management Commands
-
-- **Create Game** (host sends questions)
-
-  `<-`
-  ```json
-  {
-    "type": "create_game",
-    "data": {
-      "questions": [
-        {
-          "text": "<string>",
-          "options": ["<string>", "<string>", "<string>", "<string>"],
-          "correctIndex": "<number>",
-          "timeLimitSec": "<number>"
-        }
-      ]
-    },
-    "id": 0
-  }
-  ```
-  `->` (personal response to host)
-  ```json
-  {
-    "type": "game_created",
-    "data": {
-      "gameId": "<string>",
-      "code": "<string>"
-    },
-    "id": 0
+- `Article` (with attributes):
+  ```typescript
+  interface Article {
+    id: string; // uuid v4
+    title: string;
+    content: string;
+    status: 'draft' | 'published' | 'archived';
+    authorId: string | null; // refers to User
+    categoryId: string | null; // refers to Category
+    tags: string[]; // array of tag names
+    createdAt: number; // timestamp of creation
+    updatedAt: number; // timestamp of last update
   }
   ```
 
-- **Join Game** (player joins by code)
-
-  `<-`
-  ```json
-  {
-    "type": "join_game",
-    "data": {
-      "code": "<string>"
-    },
-    "id": 0
-  }
-  ```
-  `->` (personal response to joining player)
-  ```json
-  {
-    "type": "game_joined",
-    "data": {
-      "gameId": "<string>"
-    },
-    "id": 0
-  }
-  ```
-  `->` (broadcast to all players in the game)
-  ```json
-  {
-    "type": "player_joined",
-    "data": {
-      "playerName": "<string>",
-      "playerCount": "<number>"
-    },
-    "id": 0
+- `Category` (with attributes):
+  ```typescript
+  interface Category {
+    id: string; // uuid v4
+    name: string;
+    description: string;
   }
   ```
 
-- **Update Players** (broadcast when player list changes)
-
-  `->` (broadcast to all in game)
-  ```json
-  {
-    "type": "update_players",
-    "data": [
-      {
-        "name": "<string>",
-        "index": "<number | string>",
-        "score": "<number>"
-      }
-    ],
-    "id": 0
+- `Comment` (with attributes):
+  ```typescript
+  interface Comment {
+    id: string; // uuid v4
+    content: string;
+    articleId: string; // refers to Article
+    authorId: string | null; // refers to User
+    createdAt: number; // timestamp of creation
   }
   ```
 
-### Game Play Commands
+**Details:**
 
-- **Start Game** (host only)
+1. For `Users`, `Articles`, `Categories`, and `Comments`, REST endpoints with separate router paths should be created:
 
-  `<-`
-  ```json
-  {
-    "type": "start_game",
-    "data": {
-      "gameId": "<string>"
-    },
-    "id": 0
+* `Users` (`/user` route)
+  * `GET /user` — get all users
+    - Server should answer with `status code` **200** and all user records
+  * `GET /user/:id` — get single user by id
+    - Server should answer with `status code` **200** and the record with `id === userId` if it exists
+    - Server should answer with `status code` **400** and corresponding message if `userId` is invalid (not `uuid`)
+    - Server should answer with `status code` **404** and corresponding message if record with `id === userId` doesn't exist
+  * `POST /user` — create user
+    `CreateUserDto`:
+    ```typescript
+    interface CreateUserDto {
+      login: string;
+      password: string;
+      role?: 'admin' | 'editor' | 'viewer'; // defaults to 'viewer'
+    }
+    ```
+    - Server should answer with `status code` **201** and newly created record if request is valid
+    - Server should answer with `status code` **400** and corresponding message if request `body` does not contain **required** fields
+  * `PUT /user/:id` — update user's password
+    `UpdatePasswordDto`:
+    ```typescript
+    interface UpdatePasswordDto {
+      oldPassword: string;
+      newPassword: string;
+    }
+    ```
+    - Server should answer with `status code` **200** and updated record if request is valid
+    - Server should answer with `status code` **400** and corresponding message if `userId` is invalid (not `uuid`)
+    - Server should answer with `status code` **404** and corresponding message if record with `id === userId` doesn't exist
+    - Server should answer with `status code` **403** and corresponding message if `oldPassword` is wrong
+  * `DELETE /user/:id` — delete user
+    - Server should answer with `status code` **204** if the record is found and deleted
+    - Server should answer with `status code` **400** and corresponding message if `userId` is invalid (not `uuid`)
+    - Server should answer with `status code` **404** and corresponding message if record with `id === userId` doesn't exist
+
+* `Articles` (`/article` route)
+  * `GET /article` — get all articles
+    - Server should answer with `status code` **200** and all article records
+    - Supports optional query parameters for filtering: `status`, `categoryId`, `tag` (e.g. `GET /article?status=published&tag=nodejs`)
+  * `GET /article/:id` — get single article by id
+    - Server should answer with `status code` **200** and the record with `id === articleId` if it exists
+    - Server should answer with `status code` **400** and corresponding message if `articleId` is invalid (not `uuid`)
+    - Server should answer with `status code` **404** and corresponding message if record with `id === articleId` doesn't exist
+  * `POST /article` — create new article
+    - Server should answer with `status code` **201** and newly created record if request is valid
+    - Server should answer with `status code` **400** and corresponding message if request `body` does not contain **required** fields (`title`, `content`)
+  * `PUT /article/:id` — update article info
+    - Server should answer with `status code` **200** and updated record if request is valid
+    - Server should answer with `status code` **400** and corresponding message if `articleId` is invalid (not `uuid`)
+    - Server should answer with `status code` **404** and corresponding message if record with `id === articleId` doesn't exist
+  * `DELETE /article/:id` — delete article
+    - Server should answer with `status code` **204** if the record is found and deleted
+    - Server should answer with `status code` **400** and corresponding message if `articleId` is invalid (not `uuid`)
+    - Server should answer with `status code` **404** and corresponding message if record with `id === articleId` doesn't exist
+
+* `Categories` (`/category` route)
+  * `GET /category` — get all categories
+    - Server should answer with `status code` **200** and all category records
+  * `GET /category/:id` — get single category by id
+    - Server should answer with `status code` **200** and the record with `id === categoryId` if it exists
+    - Server should answer with `status code` **400** and corresponding message if `categoryId` is invalid (not `uuid`)
+    - Server should answer with `status code` **404** and corresponding message if record with `id === categoryId` doesn't exist
+  * `POST /category` — create new category
+    - Server should answer with `status code` **201** and newly created record if request is valid
+    - Server should answer with `status code` **400** and corresponding message if request `body` does not contain **required** fields (`name`, `description`)
+  * `PUT /category/:id` — update category info
+    - Server should answer with `status code` **200** and updated record if request is valid
+    - Server should answer with `status code` **400** and corresponding message if `categoryId` is invalid (not `uuid`)
+    - Server should answer with `status code` **404** and corresponding message if record with `id === categoryId` doesn't exist
+  * `DELETE /category/:id` — delete category
+    - Server should answer with `status code` **204** if the record is found and deleted
+    - Server should answer with `status code` **400** and corresponding message if `categoryId` is invalid (not `uuid`)
+    - Server should answer with `status code` **404** and corresponding message if record with `id === categoryId` doesn't exist
+
+* `Comments` (`/comment` route)
+  * `GET /comment?articleId={articleId}` — get all comments for an article
+    - Server should answer with `status code` **200** and all comment records for the given article
+    - `articleId` query parameter is **required**
+  * `POST /comment` — create new comment
+    - Body must contain `content` and `articleId` (both **required**)
+    - Server should answer with `status code` **201** and newly created record if request is valid
+    - Server should answer with `status code` **400** if required fields are missing
+    - Server should answer with `status code` **422** if the referenced `articleId` doesn't exist
+  * `DELETE /comment/:id` — delete comment
+    - Server should answer with `status code` **204** if the record is found and deleted
+    - Server should answer with `status code` **400** and corresponding message if `commentId` is invalid (not `uuid`)
+    - Server should answer with `status code` **404** and corresponding message if record with `id === commentId` doesn't exist
+
+2. For now, these endpoints should operate only with **in-memory** (hardcoded) data. In the next tasks we will use a database for it. You should organize your modules with the consideration that the data source will be changed soon.
+
+3. An `application/json` format should be used for request and response body.
+
+4. Do not put everything in one file. Organize code by domain using Nest modules (for example: `UserModule`, `ArticleModule`, `CategoryModule`, `CommentModule`) with controllers and services.
+
+5. `User`'s password should be excluded from server response.
+
+6. When you delete a `User`, their `authorId` in corresponding `Articles` should become `null`, and their `Comments` should be deleted. When you delete a `Category`, the `categoryId` in corresponding `Articles` should become `null`. When you delete an `Article`, its `Comments` should be deleted.
+
+7. All request bodies should be validated with DTO classes and validation decorators (for example, via a global validation pipe).
+
+8. Use Nest middleware, interceptors, or guards for cross-cutting concerns such as request logging and access checks.
+
+9. Integrate `@nestjs/swagger` to provide OpenAPI documentation accessible at `/doc`.
+
+10. To run the service, `npm start` command should be used.
+
+11. Service should listen on PORT `4000` by default, PORT value is stored in `.env` file.
+
+12. Incoming requests should be validated.
+
+**Hints:**
+
+* To generate all entities `id`s use [Node.js randomUUID](https://nodejs.org/dist/latest-v24.x/docs/api/crypto.html#cryptorandomuuidoptions).
+* Use Nest module boundaries and dependency injection to keep business logic out of controllers.
+* Use DTOs and validation pipes for request validation.
+* For finite value sets like `User.role` and `Article.status`, prefer TypeScript enums or `as const` objects to avoid magic strings across DTOs, services, and validation schemas.
+
+  ```typescript
+  export enum UserRole {
+    ADMIN = 'admin',
+    EDITOR = 'editor',
+    VIEWER = 'viewer',
+  }
+
+  export enum ArticleStatus {
+    DRAFT = 'draft',
+    PUBLISHED = 'published',
+    ARCHIVED = 'archived',
   }
   ```
-  `->` (broadcast — first question, options only, no correct answer)
-  ```json
-  {
-    "type": "question",
-    "data": {
-      "questionNumber": "<number>",
-      "totalQuestions": "<number>",
-      "text": "<string>",
-      "options": ["<string>", "<string>", "<string>", "<string>"],
-      "timeLimitSec": "<number>"
-    },
-    "id": 0
-  }
-  ```
-
-- **Submit Answer** (player)
-
-  `<-`
-  ```json
-  {
-    "type": "answer",
-    "data": {
-      "gameId": "<string>",
-      "questionIndex": "<number>",
-      "answerIndex": "<number>"
-    },
-    "id": 0
-  }
-  ```
-  `->` (personal response)
-  ```json
-  {
-    "type": "answer_accepted",
-    "data": {
-      "questionIndex": "<number>"
-    },
-    "id": 0
-  }
-  ```
-
-- **Question Result** (broadcast after timer expires or all answered)
-
-  `->` (broadcast)
-  ```json
-  {
-    "type": "question_result",
-    "data": {
-      "questionIndex": "<number>",
-      "correctIndex": "<number>",
-      "playerResults": [
-        {
-          "name": "<string>",
-          "answered": "<boolean>",
-          "correct": "<boolean>",
-          "pointsEarned": "<number>",
-          "totalScore": "<number>"
-        }
-      ]
-    },
-    "id": 0
-  }
-  ```
-
-- **Next Question / Game Finished**
-
-  If there are more questions:
-  `->` (broadcast — next question, same format as `question` above)
-
-  If it was the last question:
-  `->` (broadcast)
-  ```json
-  {
-    "type": "game_finished",
-    "data": {
-      "scoreboard": [
-        {
-          "name": "<string>",
-          "score": "<number>",
-          "rank": "<number>"
-        }
-      ]
-    },
-    "id": 0
-  }
-  ```
-
-## Command Sequence Diagram
-
-```
-  Host                  Server                 Player1    Player2
-   reg         -->
-               <--        reg
-                                      <--        reg
-                          reg         -->
-                                                <--        reg
-                          reg                   -->
-create_game    -->
-               <--    game_created
-                                      <--     join_game
-               <--    player_joined   -->
-               <--    update_players  -->
-                                                <--     join_game
-               <--    player_joined            -->
-               <--    update_players           -->
-start_game     -->
-               <--      question      -->      -->
-                                      <--      answer
-               <--   answer_accepted
-                                                <--      answer
-                          answer_accepted       -->
-                   (timer expires)
-               <-- question_result    -->      -->
-               <--      question      -->      -->
-                          ...
-               <--   game_finished    -->      -->
-```
-
-## Requirements Summary
-
-- WebSocket server using `ws` library
-- In-memory storage for players and games
-- Server-side timer for each question
-- Score calculation based on speed of correct answer
-- Proper handling of player disconnects (remove from game, update player list)
-- All communication via JSON strings

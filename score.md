@@ -1,29 +1,36 @@
-# Scoring: WebSocket — Live Quiz Game
+# Scoring: Nest.js Knowledge Hub API
 
-Max total score: 180
+Max total score: 712
 
 
 ## Basic Scope
 
-- **+10** WebSocket server starts and accepts connections
-- **+16** Player registration/login (`reg`) works correctly — allows user to login and proceed
-- **+16** Game creation (`create_game`) works correctly — validates questions, generates 6-character code, stores game
-- **+16** Joining a game (`join_game`) works correctly — validates code, adds player, broadcasts `player_joined` and `update_players`
-- **+16** Starting a game (`start_game`) works correctly — only host can start, sends first question to all players (without correct answer)
-- **+16** Submitting answers (`answer`) works correctly — validates answer, stores it, sends `answer_accepted`
-- **+16** Question results (`question_result`) are broadcast after timer expires — includes correct answer and per-player results
+- **+10** The repository with the application contains a `Readme.md` file containing detailed instructions for installing, running and using the application
+- **+10** The application code that works with `Users` is organized into Nest module/controller/service with proper separation of concerns
+- **+10** The application code that works with `Articles` is organized into Nest module/controller/service
+- **+10** The application code that works with `Categories` is organized into Nest module/controller/service
+- **+10** The application code that works with `Comments` is organized into Nest module/controller/service
+- **+10** For each successfully passed test
 
 ## Advanced Scope
 
-- **+26** Full game flow works end-to-end: create → join → start → answer all questions → `game_finished` with final scoreboard and ranks
-- **+16** Scoring with speed bonus is implemented correctly (`basePoints * timeRemaining / timeLimit`)
-- **+16** Server-side timer is implemented — question results are sent after `timeLimitSec` even if not all players answered
-- **+16** Disconnects are handled correctly — player is removed from the game, `update_players` is broadcast, game continues
+- **+16** DTO validation is used for all request bodies (validation decorators + validation pipe)
+- **+10** Article filtering by `status`, `categoryId`, and `tag` query parameters works correctly
+- **+16** OpenAPI documentation is generated via `@nestjs/swagger` and accessible at `/doc`
+- **+10** Cascading behavior on delete is implemented correctly (User delete → articles nullified + comments removed; Category delete → articles nullified; Article delete → comments removed)
+
+## Hacker Scope
+
+- **+10** Pagination is implemented for list endpoints (query params `page` and `limit`, response includes `total`, `page`, `limit`, `data`)
+- **+10** Sorting is implemented for list endpoints (query params `sortBy` and `order`)
+- **+10** Additional automated tests are written
 
 ## Forfeits
 
-- **-95% of total task score** Any external tools/libraries beyond those listed in technical requirements
-- **-30% of total task score** Commits after deadline (except commits that affect only Readme.md, .gitignore, etc.)
-- **-20** Missing PR or its description is incorrect
+- **-670** Changes in tests
+- **-30% of max task score** Commits after deadline (except commits that affect only Readme.md, .gitignore, etc.)
 - **-20** No separate development branch
+- **-20** No Pull Request
+- **-10** Pull Request description is incorrect
+- **-10** Every lint error after `npm run lint` using local config (errors, not warnings)
 - **-20** Less than 3 commits in the development branch, not including commits that make changes only to `Readme.md` or similar files (`tsconfig.json`, `.gitignore`, `.prettierrc.json`, etc.)
